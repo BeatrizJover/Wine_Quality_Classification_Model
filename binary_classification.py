@@ -60,8 +60,25 @@ np.random.seed(42)
 torch.manual_seed(42)
 
 
-def load_data():
-    df = pd.read_csv("winequality_data.csv")
+def load_data():        
+    '''Loads and preprocesses the wine quality dataset for binary classification.
+
+    Steps:
+    1. Reads the dataset from "winequality_data.csv".
+    2. Drops unnecessary columns: "Id", "density", "fixed acidity", "chlorides", "free sulfur dioxide".
+    3. Filters rows where "total sulfur dioxide" is below 200.
+    4. Converts the "quality" column into a binary classification:
+    - Labels quality scores 2-5 as "low" (encoded as 0).
+    - Labels quality scores 6-9 as "high" (encoded as 1).
+    5. Splits the dataset into features (X) and target labels (y).
+    6. Divides data into training and testing sets (75% train, 25% test).
+    7. Standardizes feature values using `StandardScaler`.
+    8. Converts data into PyTorch tensors for deep learning use.
+
+    Returns:
+        tuple: (x_train, x_test, y_train, y_test) as PyTorch tensors.'''
+    
+    df = pd.read_csv("dataset/winequality_data.csv")
     df = df.drop(
         columns=["Id", "density", "fixed acidity", "chlorides", "free sulfur dioxide"],
         axis=1,

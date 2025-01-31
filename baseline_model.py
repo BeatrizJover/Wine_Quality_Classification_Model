@@ -29,7 +29,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 # load data
-data = pd.read_csv("winequality_data.csv")
+data = pd.read_csv("dataset/winequality_data.csv")
 data = data.drop(
     columns=["Id", "fixed acidity", "chlorides", "free sulfur dioxide"], axis=1
 )
@@ -68,7 +68,6 @@ test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-
 
 # Define the baseline neural network
 class WineQualityModel(nn.Module):
@@ -187,6 +186,7 @@ vloss = criterion(outputs, y_test_tensor)
 print(f"Loss = {vloss.item()}")
 print(classification_report(y_true_np, y_pred_np))
 
+# Confusion matrix
 cm = confusion_matrix(y_test, y_pred)
 plt.figure(figsize=(8, 6))
 sns.heatmap(
