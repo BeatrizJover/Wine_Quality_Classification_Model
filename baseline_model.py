@@ -5,7 +5,7 @@ import numpy as np
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
