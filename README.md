@@ -1,8 +1,15 @@
 # Wine Quality Prediction: Neural Network Models
 
-This repository contains three Python scripts demonstrating the application of machine learning techniques to predict the quality of wine using the "winequality_data.csv" dataset. The code includes implementations for classification tasks using neural networks in PyTorch, with varying configurations and enhancements like early stopping and SMOTE.
+## Table of Contents
 
-It also include two notebooks: one with data analysis and the other with other models
+- [Description](#description)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributors](#contributors)
+
+## Description
+
+This repository contains three Python scripts demonstrating the application of machine learning techniques to predict the quality of wine using the "winequality_data.csv" dataset. The code includes implementations for classification tasks using neural networks in PyTorch, with varying configurations and enhancements like early stopping and SMOTE. It also include two notebooks: one with data analysis and the other with other models.
 
 The scripts include:
 
@@ -10,9 +17,9 @@ The scripts include:
 - `binary_classification.py`: A binary classification model that predicts wine quality as either 'low' or 'high'.
 - `multiclass_classification.py`: A multi-class classification model for predicting 'low', 'average', or 'high' wine quality.
 
-## Requirements
+## Installation
 
-Before running the code, ensure that you have the following installed:
+1. Install dependencies:
 
 Python 3.7 or higher
 PyTorch
@@ -23,7 +30,9 @@ Seaborn
 Imbalanced-learn (for SMOTE)
 tqdm
 
-## Data
+## Usage
+
+### Data
 
 The code requires the "winequality_data.csv" dataset. You can download it from the UCI Machine Learning Repository.
 
@@ -35,3 +44,7 @@ This script focuses on binary classification, where the quality of wine is class
 
 3. multiclass_classification.py
 In this script, the model predicts wine quality as low, average, or high, similar to baseline_model.py but with the added enhancement of using SMOTE (Synthetic Minority Over-sampling Technique) to handle class imbalance.
+
+## Contributors
+
+- [BeatrizJover](https://github.com/BeatrizJover)
