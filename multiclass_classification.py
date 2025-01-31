@@ -42,6 +42,7 @@ class EarlyStopping:
                 return True
         return False
 
+
 # GPU
 has_mps = torch.backends.mps.is_built()
 device = "mps" if has_mps else "cuda" if torch.cuda.is_available() else "cpu"
@@ -51,32 +52,34 @@ print(f"Using device: {device}")
 np.random.seed(42)
 torch.manual_seed(42)
 
+
 def load_data():
     df = pd.read_csv("winequality_data.csv")
-    df = df.drop(columns=[
-        "Id",'fixed acidity','chlorides', "free sulfur dioxide"], axis=1)
-    df = df[df['total sulfur dioxide'] < 200]
+    df = df.drop(
+        columns=["Id", "fixed acidity", "chlorides", "free sulfur dioxide"], axis=1
+    )
+    df = df[df["total sulfur dioxide"] < 200]
 
     # Binning the 'quality' column into 'low', 'average', 'high'
-    bins = [2, 4, 6, 9]  
-    labels = ['low', 'average', 'high']
-    df['quality'] = pd.cut(df['quality'], bins=bins, labels=labels, include_lowest=True)
+    bins = [2, 4, 6, 9]
+    labels = ["low", "average", "high"]
+    df["quality"] = pd.cut(df["quality"], bins=bins, labels=labels, include_lowest=True)
     # Encoding 'quality' into integers (0 for 'low', 1 for 'average', 2 for 'high')
-    label_mapping = {'low': 0, 'average': 1, 'high': 2}
-    df['quality'] = df['quality'].map(label_mapping)
+    label_mapping = {"low": 0, "average": 1, "high": 2}
+    df["quality"] = df["quality"].map(label_mapping)
 
     X = df.drop(columns=["quality"]).values
-    y = df["quality"].values    
+    y = df["quality"].values
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
     )
-    
+
     # SMOTE
     smote = SMOTE(sampling_strategy={0: 150, 2: 150}, random_state=42)
     x_train, y_train = smote.fit_resample(x_train, y_train)
 
     # Standardize features
-    scaler = StandardScaler()    
+    scaler = StandardScaler()
     x_train = scaler.fit_transform(x_train)
     x_test = scaler.transform(x_test)
 
@@ -88,14 +91,14 @@ def load_data():
 
     return x_train, x_test, y_train, y_test
 
+
 x_train, x_test, y_train, y_test = load_data()
 
 # Create dataloaders
 BATCH_SIZE = 32
 
 dataset_train = TensorDataset(x_train, y_train)
-dataloader_train = DataLoader(
-    dataset_train, batch_size=BATCH_SIZE, shuffle=True)
+dataloader_train = DataLoader(dataset_train, batch_size=BATCH_SIZE, shuffle=True)
 dataset_test = TensorDataset(x_test, y_test)
 dataloader_test = DataLoader(dataset_test, batch_size=BATCH_SIZE, shuffle=True)
 
@@ -107,11 +110,11 @@ model = nn.Sequential(
     nn.Linear(64, 32),
     nn.ReLU(),
     nn.Dropout(0.3),
-    nn.Linear(32, 3),   
+    nn.Linear(32, 3),
     nn.LogSoftmax(dim=1),
 )
 
-model = torch.compile(model,backend="aot_eager").to(device)
+model = torch.compile(model, backend="aot_eager").to(device)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-3)
 es = EarlyStopping()
@@ -120,7 +123,7 @@ train_accuracies = []
 val_accuracies = []
 epoch = 0
 done = False
-while epoch < 1000 and not done: #200
+while epoch < 1000 and not done:  # 200
     epoch += 1
     steps = list(enumerate(dataloader_train))
     pbar = tqdm.tqdm(steps)
@@ -151,7 +154,7 @@ while epoch < 1000 and not done: #200
             train_accuracy = correct_train / total_train
             train_accuracies.append(train_accuracy)
             val_accuracies.append(val_accuracy)
-        
+
             vloss = loss_fn(val_pred, y_test)
             if es(model, vloss):
                 done = True
@@ -161,7 +164,7 @@ while epoch < 1000 and not done: #200
         else:
             pbar.set_description(f"Epoch: {epoch}, tloss {loss:}")
 
-#Final evaluation
+# Final evaluation
 pred = model(x_test)
 _, predict_classes = torch.max(pred, 1)
 correct = accuracy_score(y_test.cpu(), predict_classes.cpu())

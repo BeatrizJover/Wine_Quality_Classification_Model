@@ -8,9 +8,17 @@ import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.metrics import accuracy_score,confusion_matrix, f1_score, roc_auc_score, balanced_accuracy_score, classification_report
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    roc_auc_score,
+    balanced_accuracy_score,
+    classification_report,
+)
 import matplotlib.pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
+
 
 class EarlyStopping:
     def __init__(self, patience=160, min_delta=1e-3, restore_best_weights=True):
@@ -40,7 +48,8 @@ class EarlyStopping:
                     model.load_state_dict(self.best_model)
                 return True
         return False
-    
+
+
 # GPU
 has_mps = torch.backends.mps.is_built()
 device = "mps" if has_mps else "cuda" if torch.cuda.is_available() else "cpu"
@@ -50,35 +59,38 @@ print(f"Using device: {device}")
 np.random.seed(42)
 torch.manual_seed(42)
 
+
 def load_data():
     df = pd.read_csv("winequality_data.csv")
-    df = df.drop(columns=[
-        "Id","density",'fixed acidity','chlorides', "free sulfur dioxide"], axis=1)
-    df = df[df['total sulfur dioxide'] < 200]
-    
+    df = df.drop(
+        columns=["Id", "density", "fixed acidity", "chlorides", "free sulfur dioxide"],
+        axis=1,
+    )
+    df = df[df["total sulfur dioxide"] < 200]
+
     # Binning the 'quality' column into binary classification: 'low', 'high'
-    bins = [2, 5, 9]  
-    group_names = ['low', 'high']
-    df['quality'] = pd.cut(df['quality'], bins=bins, labels=group_names)
+    bins = [2, 5, 9]
+    group_names = ["low", "high"]
+    df["quality"] = pd.cut(df["quality"], bins=bins, labels=group_names)
     # Encoding (0 for 'low', 1 for 'high')
     le = LabelEncoder()
-    df['quality'] = le.fit_transform(df['quality'])
-    
+    df["quality"] = le.fit_transform(df["quality"])
+
     X = df.drop(columns=["quality"]).values
-    y = df["quality"].values  
-    
+    y = df["quality"].values
+
     # Split into test and training sets
     x_train, x_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
     )
 
-    scaler = StandardScaler()    
+    scaler = StandardScaler()
     x_train = scaler.fit_transform(x_train)
     x_test = scaler.transform(x_test)
 
     # Convert to Torch tensors
     x_train = torch.tensor(x_train, device=device, dtype=torch.float32)
-    y_train = torch.tensor(y_train, device=device, dtype=torch.float32)  
+    y_train = torch.tensor(y_train, device=device, dtype=torch.float32)
     x_test = torch.tensor(x_test, device=device, dtype=torch.float32)
     y_test = torch.tensor(y_test, device=device, dtype=torch.float32)
 
@@ -104,7 +116,7 @@ model = nn.Sequential(
     nn.Dropout(0.3),
     nn.Linear(25, 15),
     nn.ReLU(),
-    nn.Linear(15, 1),  
+    nn.Linear(15, 1),
 )
 
 model = torch.compile(model, backend="aot_eager").to(device)
@@ -126,7 +138,7 @@ while epoch < 1000 and not done:
     steps = list(enumerate(dataloader_train))
     pbar = tqdm.tqdm(steps)
     model.train()
-    epoch_train_loss = 0  
+    epoch_train_loss = 0
     correct_train = 0
     total_train = 0
 
@@ -138,7 +150,7 @@ while epoch < 1000 and not done:
         optimizer.step()
 
         # Accumulate loss
-        epoch_train_loss += loss.item() * len(x_batch) 
+        epoch_train_loss += loss.item() * len(x_batch)
 
         # Calculate train accuracy
         predicted_labels = (torch.sigmoid(y_batch_pred) > 0.5).float()
@@ -163,12 +175,12 @@ while epoch < 1000 and not done:
             )
         else:
             pbar.set_description(f"Epoch: {epoch}, tloss {loss:}")
-    
+
     # Store the epoch's training loss and validation loss
-    epoch_train_loss /= len(dataloader_train.dataset)  
-    val_losses.append(vloss.item())  
-    train_losses.append(epoch_train_loss)  
-    
+    epoch_train_loss /= len(dataloader_train.dataset)
+    val_losses.append(vloss.item())
+    train_losses.append(epoch_train_loss)
+
     # Calculate training accuracy
     train_accuracy = correct_train / total_train
     train_accuracies.append(train_accuracy)
@@ -177,7 +189,7 @@ while epoch < 1000 and not done:
 # Evaluation
 model.eval()
 pred = model(x_test).squeeze(1)
-y_pred_np = (torch.sigmoid(pred) > 0.5).cpu().numpy() 
+y_pred_np = (torch.sigmoid(pred) > 0.5).cpu().numpy()
 y_test_np = y_test.cpu().numpy()
 
 accuracy = accuracy_score(y_test_np, y_pred_np)
@@ -192,22 +204,26 @@ print(f"AUC-ROC: {roc_auc:.4f}")
 
 # Confusion Matrix
 cm = confusion_matrix(y_test_np, y_pred_np)
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Clase 0 (<=5)", "Clase 1 (>=6)"])
+disp = ConfusionMatrixDisplay(
+    confusion_matrix=cm, display_labels=["Clase 0 (<=5)", "Clase 1 (>=6)"]
+)
 disp.plot(cmap="Blues", values_format="d")
 plt.title("Confusion Matrix")
 plt.show()
 
 # Classification Report
-report = classification_report(y_test_np, y_pred_np, target_names=["Clase 0 (<=5)", "Clase 1 (>=6)"])
+report = classification_report(
+    y_test_np, y_pred_np, target_names=["Clase 0 (<=5)", "Clase 1 (>=6)"]
+)
 print("Classification Report:\n", report)
 
 # Plot learning curve
 plt.figure(figsize=(10, 6))
-plt.plot(range(1, epoch+1), train_losses, label='Training Loss')
-plt.plot(range(1, epoch+1), val_losses, label='Validation Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.title('Learning Curve')
+plt.plot(range(1, epoch + 1), train_losses, label="Training Loss")
+plt.plot(range(1, epoch + 1), val_losses, label="Validation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.title("Learning Curve")
 plt.legend()
 plt.grid(True)
 plt.show()
@@ -221,7 +237,3 @@ plt.ylabel("Accuracy")
 plt.legend()
 plt.grid(True)
 plt.show()
-
-
-
-
